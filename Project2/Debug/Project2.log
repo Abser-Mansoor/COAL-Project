@@ -1,0 +1,3 @@
+﻿  Assembling Test.asm...
+D:\abseruni\Visual-Studio\Dependencies\irvine\SmallWin.inc(11): warning A4011: multiple .MODEL directives found : .MODEL ignored
+  Project2.vcxproj -> D:\abseruni\Visual-Studio\Project2\Debug\Project2.exe
