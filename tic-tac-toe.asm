@@ -6,7 +6,7 @@ include irvine32.inc
     
     ; Game messages
     titleMsg byte "Welcome to Tic Tac Toe", 0
-    promptMode byte "Select mode: 1-Easy, 2-Hard, 3-2Player: ", 0
+    promptMode byte "Select mode: 1-Easy, 2-Hard, 3-MultiPlayer: ", 0
     invalidMode byte "Invalid mode selected", 0
     oTurn byte "O's Turn: ", 0
     xTurn byte "X's Turn: ", 0
@@ -19,6 +19,7 @@ include irvine32.inc
     tieMsg byte "It's a tie!", 0
     currentBoard byte "Current board:", 0
     newline byte 13, 10, 0
+    restartMsg byte "Would you like to play again? (1 for yes): ", 0
     
     ; Characters for display
     emptyChar byte '.', 0
@@ -45,6 +46,11 @@ include irvine32.inc
         call WriteString
         call crlf
         call crlf
+        restart:
+            mov edi, offset board    ; Point EDI to the start of the board
+            mov al, 0                ; reinitialising board to 0
+            mov ecx, lengthof board
+            rep stosb                ; stosb used to efficiently reinitialise without looping
     
         ; Get game mode
         get_mode:
@@ -163,6 +169,12 @@ include irvine32.inc
                 call WriteString
     
         exit_game:
+            call crlf
+            mov edx, offset restartMsg
+            call writestring
+            call readint
+            cmp eax, 1
+            je restart
             call crlf
             exit
     main endp
