@@ -11,7 +11,7 @@ include irvine32.inc
     oTurn byte "O's Turn: ", 0
     xTurn byte "X's Turn: ", 0
     yourTurn byte "Your Turn:", 0
-    promptMove byte "Enter your move (1-9):", 0
+    promptMove byte "Enter your move (1-9): ", 0
     compMove byte "Computer moving...", 0
     invalidMove byte "Invalid move! Try again.", 0
     playerXWins byte "Player X wins!", 0
@@ -22,9 +22,9 @@ include irvine32.inc
     restartMsg byte "Would you like to play again? (1 for yes): ", 0
     
     ; Characters for display
-    emptyChar byte '.', 0
-    xChar byte 'X', 0
-    oChar byte 'O', 0
+    xChar byte 'X ', 0
+    oChar byte 'O ', 0
+    hLine byte "---|---|---", 0
     
     ; Game state
     currentPlayer byte -1  ; -1=X, 1=O
@@ -32,6 +32,7 @@ include irvine32.inc
     gameOver byte 0       ; 0=playing, 1=over
     
     ; For input handling
+    inputStr byte 16 dup(0)
     moveVal dword ?
     
 .code
@@ -45,6 +46,7 @@ include irvine32.inc
         call WriteString
         call crlf
         call crlf
+
         restart:
             mov edi, offset board    ; Point EDI to the start of the board
             mov al, 0                ; reinitialising board to 0
@@ -78,6 +80,7 @@ include irvine32.inc
         
         ; Main game loop
         game_loop:
+            call clrscr
             call printBoard
     
             ; Check if game is over
@@ -123,12 +126,20 @@ include irvine32.inc
     
             ; Easy AI
             call easyMode
+
+            mov eax, 2500
+            call delay
+
             jmp switch_player
     
             ; Hard AI
             hard:
             
             call hardMode
+
+            mov eax, 2500
+            call delay
+
             jmp switch_player
     
             ; Get player move
@@ -168,6 +179,7 @@ include irvine32.inc
                 call WriteString
     
         exit_game:
+            call crlf
             call crlf
             mov edx, offset restartMsg
             call writestring
@@ -287,10 +299,13 @@ include irvine32.inc
         call writestring
         call crlf
     
-        mov ecx, 0          ; counter
         mov esi, 0
+        mov eax, 0
     
         print_loop:
+            mov al, ' '
+            call writechar
+
             movsx eax, board[esi]
             cmp eax, 0
             je print_empty
@@ -300,36 +315,55 @@ include irvine32.inc
             ; print O
             mov edx, offset oChar
             call writestring
-            jmp print_space
-    
+            jmp print_divider
+
             print_empty:
-                mov edx, offset emptyChar
-                call writestring
-                jmp print_space
+                mov eax, '.'
+                call writechar
+                mov al, ' '         ; Add padding
+                call writechar
+                jmp print_divider
     
             print_x:
                 mov edx, offset xChar
                 call writestring
     
-            print_space:
-                mov al, ' '
-                call writechar
-    
-            inc ecx
+            print_divider:
+                ; Print " | " divider (except after last column)
+                mov eax, esi
+                inc eax             ; Check (counter + 1) mod 3
+                cdq
+                mov ebx, 3
+                div ebx
+                cmp edx, 0          ; If remainder=0, skip divider
+                je no_divider
+
+            mov al, '|'
+            call writechar
             
-            ; Check for newline (every 3 cells)
-            mov eax, ecx
-            cdq ; converts double to quead (EAX to EDX:EAX)
-            mov ebx, 3
-            div ebx ; Division by 3 to check when new line needs to be printe
-            cmp edx, 0 ; EDX contains remainder after division so compare with 0
-            jne no_newline
+            no_divider:
+                ; Check for newline (every 3 cells)
+                mov eax, esi
+                inc eax
+                cdq ; converts double to quead (EAX to EDX:EAX)
+                mov ebx, 3
+                div ebx ; Division by 3 to check when new line needs to be printed
+                cmp edx, 0 ; EDX contains remainder after division so compare with 0
+                jne no_newline
     
+            call crlf
+
+            cmp esi, 8
+            je no_newline
+
+            mov edx, offset hLine
+            call writestring
             call crlf
     
             no_newline:
                 inc esi
-                cmp ecx, 9
+                inc ecx
+                cmp esi, 9
                 jl print_loop
     
         call crlf
@@ -342,7 +376,15 @@ include irvine32.inc
         read_again:
             mov edx, offset promptMove
             call writestring
-            call readint
+    
+            ; Read string input
+            mov edx, offset inputStr
+            mov ecx, sizeof inputStr
+            call readstring
+    
+            ; Convert to number
+            mov edx, offset inputStr
+            call parseinteger32   ; (string to int function)
     
             ; Validate (1-9)
             cmp eax, 1
