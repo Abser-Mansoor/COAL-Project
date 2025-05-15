@@ -32,7 +32,6 @@ include irvine32.inc
     gameOver byte 0       ; 0=playing, 1=over
     
     ; For input handling
-    inputStr byte 16 dup(0)
     moveVal dword ?
     
 .code
@@ -343,15 +342,7 @@ include irvine32.inc
         read_again:
             mov edx, offset promptMove
             call writestring
-    
-            ; Read string input
-            mov edx, offset inputStr
-            mov ecx, sizeof inputStr
-            call readstring
-    
-            ; Convert to number
-            mov edx, offset inputStr
-            call parseinteger32   ; (string to int function)
+            call readint
     
             ; Validate (1-9)
             cmp eax, 1
